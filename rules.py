@@ -38,13 +38,16 @@ DIAGONALS = (
 
 OMNI = ORTHOGONALS + DIAGONALS
 
+DIRECTION_TYPES = [ORTHOGONALS, DIAGONALS]
+DIRECTION_PIECES = [[ROOK, QUEEN], [BISHOP, QUEEN]]
+
 def canCapturePieceAt(board, coord, color):
   piece = board.getPieceAt(coord)
   return (piece and piece.getColor() == invertColor(color))
 
-def notBlocked(board, coord, color):
+def selfBlocked(board, coord, color):
   piece = board.getPieceAt(coord)
-  return (not piece) or (piece and piece.getColor() == invertColor(color))
+  return piece and piece.getColor() == color
 
 def getPieceMoves(board, coord):
   piece = board.getPieceAt(coord)
@@ -95,7 +98,7 @@ def getKnightOrKingMoves(board, coord, color, directions):
     potentialSquare = sumCoords(coord, direction)
     if not validCoord(potentialSquare):
       continue
-    if notBlocked(board, potentialSquare, color):
+    if not selfBlocked(board, potentialSquare, color):
       moves.append(potentialSquare)
   return moves
 
@@ -105,7 +108,7 @@ def getStraightMoves(board, coord, color, directions):
   for direction in directions:
     tempCoord = sumCoords(originalCoord, direction)
     while validCoord(tempCoord):
-      if notBlocked(board, tempCoord, color):
+      if not selfBlocked(board, tempCoord, color):
         moves.append(tempCoord)
         if canCapturePieceAt(board, tempCoord, color):
           break
@@ -124,3 +127,39 @@ def allMoves(board, color=None):
     startEndMoves = [(coord, end) for end in justEndMoves]
     allMoves += startEndMoves
   return allMoves
+
+def getCheckingPieces(board, color=WHITE):
+  checkers = []
+  oppositeColor = invertColor(color)
+  kingCoord = board.getKingCoord(COLORS.index(color))
+  forward = [(-1, -1), (-1, 1)] if (color == WHITE) else [(1, -1), (1, 1)]
+  # Check for pawn(s)
+  for f in forward:
+    maybePawn = board.isSpecificPieceAt(sumCoords(kingCoord, f), oppositeColor, PAWN)
+    if maybePawn:
+      checkers.append(maybePawn)
+  # Check for knight(s)
+  for knMove in KNIGHT_MOVES:
+    maybeKnight = board.isSpecificPieceAt(sumCoords(kingCoord, knMove), oppositeColor, KNIGHT)
+    if maybeKnight:
+      checkers.append(maybeKnight)
+  # Check for king(s)
+  for kiMove in KING_MOVES:
+    maybeKing = board.isSpecificPieceAt(sumCoords(kingCoord, kiMove), oppositeColor, KING)
+    if maybeKing:
+      checkers.append(maybeKing)
+      break
+  # Check for rooks, knights, and queens
+  for i, directionType in enumerate(DIRECTION_TYPES):
+    dangerPieces = DIRECTION_PIECES[i]
+    for direction in directionType:
+      tempCoord = sumCoords(kingCoord, direction)
+      while validCoord(tempCoord):
+        potentialPiece = board.getPieceAt(tempCoord)
+        if potentialPiece:
+          if potentialPiece.getColor() == oppositeColor and potentialPiece.getPieceType() in dangerPieces:
+            checkers.append(potentialPiece)
+          break
+        tempCoord = sumCoords(tempCoord, direction)
+  return checkers
+  

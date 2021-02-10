@@ -2,14 +2,14 @@ from util import *
 from piece import Piece
 
 class Board:
-  def __init__(self, pieces=None, ply=0):
+  def __init__(self, pieces=None, kingCoords=[(7,4), (0,4)]):
     if not pieces:
       pieces = self.getInitialPieces()
     self.pieces = pieces
-    self.ply = ply
+    self.kingCoords = kingCoords
 
   def copy(self):
-    return Board(self.copyPieces(), self.ply)
+    return Board(self.copyPieces(), kingCoords=self.copyKingCoords())
 
   @staticmethod
   def getInitialPieces():
@@ -19,8 +19,21 @@ class Board:
       pieces[coordToTuple(flipCoordAcrossBoard(coord))] = Piece(BLACK, pieceType)
     return pieces
 
+  def selfDestruct(self):
+    del self.pieces
+    del self.kingCoords
+
   def getPieces(self):
     return self.pieces
+
+  def getKingCoord(self, index):
+    return self.kingCoords[index]
+
+  def setKingCoord(self, index, coord):
+    self.kingCoords[index] = coord
+
+  def copyKingCoords(self):
+    return [self.kingCoords[0], self.kingCoords[1]]
 
   def squareOccupied(self, coord):
     return coord in self.pieces
@@ -28,23 +41,37 @@ class Board:
   def getPieceAt(self, coord):
     return self.pieces[coord] if (coord in self.pieces) else None
 
+  def deletePieceAt(self, coord):
+    del self.pieces[coord]
+
+  def setPieceAt(self, coord, piece):
+    self.pieces[coord] = piece
+
   def isColorPieceAt(self, coord, color):
-    return (coord in self.pieces and self.pieces[coord].getColor() == color)
+    if coord in self.pieces:
+      piece = self.pieces[coord]
+      if piece.getColor() == color:
+        return piece
+    return False
 
-  def incrementPly(self):
-    self.ply += 1
-
-  def whoseTurn(self):
-    return WHITE if self.ply % 2 == 0 else BLACK
+  def isSpecificPieceAt(self, coord, color, pieceType):
+    if coord in self.pieces:
+      piece = self.pieces[coord]
+      if piece.getColor() == color and piece.getPieceType() == pieceType:
+        return piece
+    return False
 
   def movePiece(self, coord1, coord2, inPlace=False):
     if inPlace:
       boardOfInterest = self
     else:
       boardOfInterest = self.copy()
-    movePiece = boardOfInterest.pieces[coord1]
-    del boardOfInterest.pieces[coord1]
-    boardOfInterest.pieces[coord2] = movePiece  
+    movePiece = boardOfInterest.getPieceAt(coord1)
+    if movePiece.getPieceType() == KING:
+      colorIndex = COLORS.index(movePiece.getColor())
+      boardOfInterest.setKingCoord(colorIndex, coord2)
+    boardOfInterest.deletePieceAt(coord1)
+    boardOfInterest.setPieceAt(coord2, movePiece)
     return boardOfInterest
 
   def copyPieces(self):

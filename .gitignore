@@ -2,3 +2,4 @@ __pycache__/
 venv/
 setup.sh
 test.py
+.vscode/
