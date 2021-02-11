@@ -1,5 +1,5 @@
-WHITE = 'wh'
-BLACK = 'bl'
+WHITE = 'w'
+BLACK = 'b'
 COLORS = (WHITE, BLACK)
 
 PAWN = 'p'
@@ -8,6 +8,9 @@ BISHOP = 'b'
 ROOK = 'r'
 QUEEN = 'q'
 KING = 'k'
+
+ORTHO = 'o'
+DIAGO = 'd'
 
 BOARD_SIZE = 8
 
@@ -94,3 +97,20 @@ def pprintMoves(moves):
   for move in moves:
     ret += f"{coordToAlgebraic(move[0])} to {coordToAlgebraic(move[1])}" + ' | '
   return ret
+
+def getAlignment(c1, c2):
+  diff = (c2[0] - c1[0], c2[1] - c1[1])
+  if diff[0] != 0 and diff[1] != 0 and abs(diff[0]) != abs(diff[1]):
+    return None
+  elif diff[0] == 0:
+    return ORTHO, (0, int(abs(diff[1]) / diff[1]))
+  elif diff[1] == 0:
+    return ORTHO, (int(abs(diff[0]) / diff[0]), 0)
+  elif diff[0] == diff[1] and diff[0] > 0:
+    return DIAGO, (1,1)
+  elif diff[0] == diff[1] and diff[0] < 0:
+    return DIAGO, (-1,-1)
+  elif diff[0] == -diff[1] and diff[0] > 0:
+    return DIAGO, (1, -1)
+  else:
+    return DIAGO, (-1, 1)
